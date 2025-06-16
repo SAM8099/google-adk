@@ -8,6 +8,12 @@ def add_current_problem(session_service, app_name, user_id, session_id, text):
         )
         updated_state = session.state.copy()
         updated_state["current_problem"] = text
+        session_service.create_session(
+            app_name=app_name,
+            user_id=user_id,
+            session_id=session_id,
+            state=updated_state,
+        )
     except Exception as e:
         print(f"Error updating current_problem: {e}")
 
@@ -21,7 +27,12 @@ def add_tutor_question(session_service, app_name, user_id, session_id, text):
         if "tutor_questions" not in updated_state:
             updated_state["tutor_questions"] = []
         updated_state["tutor_questions"].append(text)
-
+        session_service.create_session(
+            app_name=app_name,
+            user_id=user_id,
+            session_id=session_id,
+            state=updated_state,
+        )
     except Exception as e:
         print(f"Error updating tutor_questions: {e}")
 
@@ -52,7 +63,11 @@ def add_content(session_service, app_name, user_id, session_id, text):
         )
         updated_state = session.state.copy()
         updated_state["content"] = text
+        session_service.create_session(
+            app_name=app_name,
+            user_id=user_id,
+            session_id=session_id,
+            state=updated_state,
+        )
     except Exception as e:
         print(f"Error updating content: {e}")
-
-

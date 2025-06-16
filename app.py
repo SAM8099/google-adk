@@ -2,7 +2,6 @@ from src.agents.problem_analyzer import problem_analyzer_root
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.pipelines.workflow import main_async
-import asyncio
 from fastapi import HTTPException
 from src.utils.utils import add_content, add_user_answer, add_current_problem, add_tutor_question
 import uuid
@@ -10,8 +9,8 @@ from src.pipelines.workflow import session_service , main_async
 from src.agents.tutor_agent import tutor_agent
 from src.agents.feedback_agent import feedback_agent
 from src.pipelines.agent_call import call_agent_async
-from src.pipelines.workflow import initial_state
-
+from src.utils.runners import create_runner
+from src.schemas.schemas import SessionInfo, initial_state
 
 APP_NAME = "DSA Tutor"
 app = FastAPI()
@@ -22,10 +21,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-class SessionInfo:
-    def __init__(self, user_id, session_id):
-        self.user_id = user_id
-        self.session_id = session_id
+problem_analyzer_runner = create_runner(problem_analyzer_root, APP_NAME, session_service)
+tutor_runner = create_runner(tutor_agent, APP_NAME, session_service)
+feedback_runner = create_runner(feedback_agent, APP_NAME, session_service)
 
 active_sessions = {}  # user_id: SessionInfo
 

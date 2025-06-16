@@ -6,15 +6,10 @@ from src.agents.tutor_agent import tutor_agent
 from src.agents.feedback_agent import feedback_agent
 from src.utils.utils import add_content, add_user_answer, add_current_problem, add_tutor_question
 from src.pipelines.agent_call import call_agent_async
-session_service = InMemorySessionService()
 
-initial_state = {
-    "user_name": "User 1",
-    "current_problem": None,
-    "tutor_questions": [],
-    "user_answers": [],
-    "content": None,
-}
+from src.schemas.schemas import initial_state
+
+session_service = InMemorySessionService()
 
 async def main_async():
     APP_NAME = "DSA Tutor"

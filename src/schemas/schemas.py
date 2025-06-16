@@ -1,6 +1,15 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Dict, List, Optional, Any
+from pydantic import BaseModel
 
-class User_answer(BaseModel):
-    question_id: int
-    answer: str = Field(..., description="The user's answer to the question.")
+class SessionInfo(BaseModel):
+    """Represents a user session in the backend."""
+    user_id: str
+    session_id: str
+
+initial_state: Dict[str, Any] = {
+    "user_name": "User 1",
+    "current_problem": None,
+    "tutor_questions": [],
+    "user_answers": [],
+    "content": None,
+}
