@@ -1,7 +1,9 @@
-from google.adk import Agent, AgentConfig, Response, AgentState, Runner
+from google.adk import Agent 
 
-feedback_agent = Agent(
-    name="Feedback Agent",
+def create_feedback_agent():
+    """Create and return the Feedback Agent."""
+    return Agent(
+    name="Feedback_Agent",
     model="gemini-2.0-flash",
     description="Provides feedback on the user's solution to a problem.",
     instruction="""
