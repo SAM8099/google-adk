@@ -20,3 +20,4 @@ python-multipart
 python-dotenv
 asyncio
 fastapi-cors
+uvicorn
