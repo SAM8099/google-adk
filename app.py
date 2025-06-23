@@ -4,6 +4,7 @@ from src.agents.feedback_agent import create_feedback_agent
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
+from src.utils.runners import create_runner
 from src.utils.parsers import format_agent_response 
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
@@ -30,9 +31,9 @@ problem_analyzer_root = create_problem_analyzer_agent()
 tutor_agent = create_tutor_agent()
 feedback_agent = create_feedback_agent()
 
-problem_analyzer_runner = Runner(agent=problem_analyzer_root, session_service=session_service)
-tutor_runner = Runner(agent=tutor_agent, session_service=session_service)
-feedback_runner = Runner(agent=feedback_agent, session_service=session_service)
+problem_analyzer_runner = create_runner(agent=problem_analyzer_root, app_name=APP_NAME, session_service=session_service)
+tutor_runner = create_runner(agent=tutor_agent, app_name=APP_NAME, session_service=session_service)
+feedback_runner = create_runner(agent=feedback_agent, app_name=APP_NAME, session_service=session_service)
 
 active_sessions = {}  # user_id: SessionInfo
 
