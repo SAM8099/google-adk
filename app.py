@@ -9,7 +9,7 @@ from src.utils.parsers import format_agent_response
 from google.adk.sessions import InMemorySessionService
 from google.adk.runners import Runner
 from src.pipelines.agent_call import call_agent_async
-from src.schemas.schemas import SessionInfo, initial_state
+from src.schemas.schemas import SessionInfo, initial_state , ProblemRequest ,  UserAnswerRequest, QuestionRequest
 from src.utils.utils import add_content, add_user_answer, add_current_problem, add_tutor_question
 
 
@@ -31,9 +31,9 @@ problem_analyzer_root = create_problem_analyzer_agent()
 tutor_agent = create_tutor_agent()
 feedback_agent = create_feedback_agent()
 
-problem_analyzer_runner = create_runner(agent=problem_analyzer_root, app_name=APP_NAME, session_service=session_service)
-tutor_runner = create_runner(agent=tutor_agent, app_name=APP_NAME, session_service=session_service)
-feedback_runner = create_runner(agent=feedback_agent, app_name=APP_NAME, session_service=session_service)
+problem_analyzer_runner = Runner(agent=problem_analyzer_root, app_name=APP_NAME, session_service=session_service)
+tutor_runner = Runner(agent=tutor_agent, app_name=APP_NAME, session_service=session_service)
+feedback_runner = Runner(agent=feedback_agent, app_name=APP_NAME, session_service=session_service)
 
 active_sessions = {}  # user_id: SessionInfo
 
@@ -46,8 +46,9 @@ async def create_session():
         app_name=APP_NAME,
         user_id=user_id,
         session_id=session_id,
-        state=initial_state.copy(),
+        state=initial_state,
     )
+    print(f"Created session for user {user_id} with session ID {session_id}")
     active_sessions[user_id] = SessionInfo(user_id=user_id, session_id=session_id)
     return {
         "status": "success",
@@ -56,36 +57,66 @@ async def create_session():
     }
 
 @app.post("/set_problem")
-async def set_problem(user_id: str, session_id: str, problem: str):
+async def set_problem(request: ProblemRequest):
+    user_id = request.user_id
+    session_id = request.session_id
+    problem = request.problem
+    print(f"Setting problem for user {user_id} in session {session_id}: {problem}")
     if user_id not in active_sessions or active_sessions[user_id].session_id != session_id:
         raise HTTPException(status_code=404, detail="Session not found")
     
+    # Critical fix: Add await to session creation
     await add_current_problem(session_service, APP_NAME, user_id, session_id, problem)
-    
+
     # Call problem analyzer
     analysis_response = await call_agent_async(
         problem_analyzer_runner, user_id, session_id, problem
     )
     analysis_text = format_agent_response(analysis_response)
-    
-    await add_content(session_service, APP_NAME, user_id, session_id, analysis_text)
-    
+
+    await add_content(session_service, APP_NAME, user_id, session_id, analysis_response)
+    print("Set problem is working")
     return {
         "status": "success",
         "message": "Problem set and analyzed",
         "analysis": analysis_text
     }
 
-@app.post("/process_answer")
-async def process_answer(user_id: str, session_id: str, answer: str):
-    if user_id not in active_sessions or active_sessions[user_id].session_id != session_id:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
-    # Get tutor question
-    tutor_response = await call_agent_async(tutor_runner, user_id, session_id, answer)
+@app.post("/get_tutor_question")
+async def get_tutor_question(request: UserAnswerRequest):
+    user_id = request.user_id
+    session_id = request.session_id
+    answer = request.answer
+
+    if answer == "start the tutoring session":
+        # Handle initial question logic
+        tutor_response = await call_agent_async(tutor_runner, user_id, session_id, "start the tutoring session")
+    else:
+        # Handle regular answer logic (if needed)
+        tutor_response = await call_agent_async(tutor_runner, user_id, session_id, answer)
+
     tutor_question = format_agent_response(tutor_response)
+    print(tutor_response)
+    await add_tutor_question(session_service, APP_NAME, user_id, session_id, tutor_response)
+    return {
+        "status": "success",
+        "tutor_question": tutor_response,
+        "message": "Tutor question generated successfully"
+    }
+
+@app.post("/process_answer")
+async def process_answer(request: UserAnswerRequest):
+    user_id = request.user_id
+    session_id = request.session_id
+    answer = request.answer
+    try:
+        session = await session_service.get_session(app_name=APP_NAME, user_id=user_id, session_id=session_id)
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Session fetch error: {e}")
+
     
-    await add_tutor_question(session_service, APP_NAME, user_id, session_id, tutor_question)
     await add_user_answer(session_service, APP_NAME, user_id, session_id, answer)
     
     # Get feedback
@@ -94,7 +125,7 @@ async def process_answer(user_id: str, session_id: str, answer: str):
     
     return {
         "status": "success",
-        "tutor_question": tutor_question,
+        "answer": answer,
         "feedback": feedback_text
     }
 

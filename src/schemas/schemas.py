@@ -13,3 +13,17 @@ initial_state: Dict[str, Any] = {
     "user_answers": [],
     "content": None,
 }
+
+class QuestionRequest(BaseModel):
+    user_id: str
+    session_id: str
+
+class ProblemRequest(BaseModel):
+    user_id: str
+    session_id: str
+    problem: str
+    
+class UserAnswerRequest(BaseModel):
+    user_id: str
+    session_id: str
+    answer: str
