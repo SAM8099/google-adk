@@ -17,7 +17,7 @@ from src.utils.utils import add_content, add_user_answer, add_current_problem, a
 session_service = InMemorySessionService()
 
 APP_NAME = "DSA Tutor"
-app = FastAPI()
+app = FastAPI(root_path="/api")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
